@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LM Monthly Planner</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f0f2f5;
+            /* Subtle gradient background */
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-repeat: no-repeat;
+            background-size: 100% 400px;
+            min-height: 100vh;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Glassmorphism Utils */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+        
+        .glass-card-dark {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+        
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+
+        /* Login Screen Specifics */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            /* Rich animated gradient background */
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #login-screen.hidden-screen {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.1); /* Slight zoom out effect on exit */
+        }
+        
+        /* Floating shapes for extra aesthetics */
+        .floating-shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 50%;
+            z-index: -1;
+            animation: float 10s infinite ease-in-out;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- LOGIN SCREEN OVERLAY -->
+    <div id="login-screen">
+        <!-- Decorative Background Shapes -->
+        <div class="floating-shape w-64 h-64 top-10 left-10 delay-0"></div>
+        <div class="floating-shape w-96 h-96 bottom-20 right-10 delay-2000" style="animation-duration: 15s;"></div>
+
+        <div class="w-full max-w-md p-10 mx-4 bg-white/10 backdrop-blur-2xl rounded-[2rem] border border-white/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] text-white relative overflow-hidden transform hover:scale-[1.01] transition duration-500">
+            
+            <!-- Shine effect -->
+            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
+
+            <div class="text-center mb-10 relative z-10">
+                <!-- Updated Login Logo to be wider and display names -->
+                <div class="h-24 w-auto px-8 mx-auto bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl inline-flex items-center justify-center text-2xl font-bold shadow-xl mb-6 ring-4 ring-white/20">
+                    Likhi & Mohi
+                </div>
+                <h1 class="text-3xl font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-100 drop-shadow-sm">
+                    MONTHLY TURNOVER
+                </h1>
+                <div class="h-1 w-20 bg-white/50 mx-auto mt-3 rounded-full"></div>
+                <p class="text-indigo-100 text-sm mt-3 font-medium tracking-wide">Likhith & Mohith's Premium Tracker</p>
+            </div>
+
+            <form id="login-form" class="space-y-6 relative z-10">
+                <div class="group">
+                    <label class="block text-xs font-bold text-indigo-100 mb-2 uppercase tracking-wider ml-1">Identity</label>
+                    <div class="relative transition-transform duration-300 group-focus-within:-translate-y-1">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-user text-white/70 text-sm"></i>
+                        </div>
+                        <input type="text" id="login-username" required placeholder="Enter your name"
+                            class="w-full pl-12 pr-4 py-4 bg-black/20 border border-white/10 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-transparent focus:bg-black/30 transition text-white placeholder-white/40 outline-none font-medium tracking-wide">
+                    </div>
+                </div>
+                
+                <div class="group">
+                    <label class="block text-xs font-bold text-indigo-100 mb-2 uppercase tracking-wider ml-1">Secure Key</label>
+                    <div class="relative transition-transform duration-300 group-focus-within:-translate-y-1">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-key text-white/70 text-sm"></i>
+                        </div>
+                        <input type="password" id="login-password" required placeholder="Enter password"
+                            class="w-full pl-12 pr-4 py-4 bg-black/20 border border-white/10 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-transparent focus:bg-black/30 transition text-white placeholder-white/40 outline-none font-medium tracking-wide">
+                    </div>
+                </div>
+
+                <div id="login-error" class="hidden bg-red-500/30 backdrop-blur-md border border-red-400/50 text-white text-xs font-bold p-3 rounded-lg text-center shadow-lg animate-bounce">
+                    <i class="fa-solid fa-circle-xmark mr-2"></i> Access Denied: Incorrect Credentials
+                </div>
+
+                <button type="submit" class="w-full bg-white text-indigo-900 font-black py-4 rounded-xl shadow-lg hover:bg-indigo-50 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all duration-300 active:scale-95 uppercase tracking-widest text-sm mt-4">
+                    Access Dashboard <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-[10px] text-white/40 font-medium uppercase tracking-widest">Secured by LM Systems</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP (Hidden initially via opacity in CSS if needed, but covered by z-index) -->
+    
+    <!-- Navbar -->
+    <nav class="px-6 py-4 shrink-0 z-20 text-white">
+        <div class="max-w-7xl mx-auto flex justify-between items-center glass-card-dark rounded-2xl px-6 py-3 shadow-lg">
+            <div class="flex items-center gap-4">
+                <!-- Updated Navbar Logo to be wider -->
+                <div class="h-10 px-3 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center shadow-lg border border-white/20 text-sm whitespace-nowrap">
+                    Likhi & Mohi
+                </div>
+                <div>
+                    <h1 id="user-greeting" class="text-lg md:text-xl font-bold tracking-tight leading-none">Likhith & Mohith</h1>
+                    <span class="text-xs font-medium text-indigo-200 opacity-80">Personal Finance</span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="logout()" class="text-xs bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-lg transition border border-white/10 backdrop-blur-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-hidden relative">
+        <div class="h-full overflow-y-auto p-4 md:p-6 pb-20">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Left Column: Summary & Input (4 cols) -->
+                <div class="lg:col-span-4 space-y-6 animate-fade-in">
+                    
+                    <!-- Balance Card (Vibrant Gradient) -->
+                    <div class="relative overflow-hidden rounded-3xl p-8 shadow-xl text-white transform hover:scale-[1.02] transition duration-300 group">
+                        <!-- Background Gradient -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"></div>
+                        <div class="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full bg-white opacity-10 blur-2xl group-hover:opacity-20 transition"></div>
+                        
+                        <div class="relative z-10">
+                            <h2 class="text-indigo-100 text-sm font-medium uppercase tracking-wider mb-2">Total Balance</h2>
+                            <div id="total-balance" class="text-5xl font-bold tracking-tight mb-8">₹0.00</div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10">
+                                    <div class="flex items-center gap-2 mb-1 text-emerald-200 text-xs font-semibold uppercase">
+                                        <div class="w-2 h-2 rounded-full bg-emerald-400"></div> Income
+                                    </div>
+                                    <div id="total-income" class="text-lg font-bold">₹0.00</div>
+                                </div>
+                                <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10">
+                                    <div class="flex items-center gap-2 mb-1 text-rose-200 text-xs font-semibold uppercase">
+                                        <div class="w-2 h-2 rounded-full bg-rose-400"></div> Expenses
+                                    </div>
+                                    <div id="total-expenses" class="text-lg font-bold">₹0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Transaction Form -->
+                    <div class="glass-panel rounded-3xl p-6 shadow-lg animate-fade-in delay-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
+                            <span class="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg"><i class="fa-solid fa-minus text-sm"></i></span> 
+                            New Expense
+                        </h3>
+                        
+                        <form id="transaction-form" class="space-y-5">
+                            <!-- Type Toggle REMOVED -->
+
+                            <!-- Inputs Group -->
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-500 ml-1 mb-1 block">Amount</label>
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="text-slate-400 font-bold">₹</span>
+                                            </div>
+                                            <input type="number" id="amount" placeholder="0" min="1" required
+                                                class="w-full pl-8 pr-4 py-3 bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition text-sm font-medium text-slate-700">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-500 ml-1 mb-1 block">Category</label>
+                                        <select id="category" class="w-full px-3 py-3 bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition text-sm font-medium text-slate-700 appearance-none cursor-pointer">
+                                            <!-- Options via JS -->
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 ml-1 mb-1 block">Date</label>
+                                    <input type="date" id="date" required
+                                        class="w-full px-4 py-3 bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition text-sm font-medium text-slate-700 text-slate-500">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all transform active:scale-[0.98]">
+                                Add Expense
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="text-center">
+                         <button onclick="clearUserData()" class="text-xs text-rose-500 hover:text-rose-700 hover:underline transition">
+                            Reset My Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Charts & History (8 cols) -->
+                <div class="lg:col-span-8 flex flex-col gap-6">
+                    
+                    <!-- Chart Section -->
+                    <div class="glass-panel rounded-3xl p-6 shadow-lg animate-fade-in delay-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-slate-800">Spending Breakdown</h3>
+                            <span class="text-xs font-medium px-2 py-1 bg-slate-100 rounded text-slate-500">This Month</span>
+                        </div>
+                        <div class="h-56 w-full flex justify-center relative">
+                             <canvas id="expenseChart"></canvas>
+                             <div id="no-data-chart" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 hidden">
+                                <i class="fa-solid fa-chart-pie text-4xl mb-2 opacity-20"></i>
+                                <span class="text-sm font-medium">No expenses to analyze</span>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction List -->
+                    <div class="glass-panel rounded-3xl shadow-lg flex flex-col flex-1 min-h-[400px] overflow-hidden animate-fade-in delay-200">
+                        <div class="p-6 border-b border-slate-100/50 flex justify-between items-end bg-white/30 backdrop-blur-sm">
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">History</h3>
+                                <p class="text-xs text-slate-500 mt-1">Recent financial activity</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 overflow-y-auto p-4 space-y-3" id="transaction-list">
+                            <!-- Transactions injected here -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script>
+        // --- Configuration ---
+        const USERS = {
+            "likhith": "likhi",
+            "mohith": "mohi"
+        };
+
+        // --- State Management ---
+        let currentUser = null;
+        let transactions = [];
+        let chartInstance = null;
+
+        // --- Constants ---
+        const expenseCategories = ['Food', 'Rent', 'Transport', 'Utilities', 'Entertainment', 'Health', 'Shopping', 'Education', 'Other'];
+        const incomeCategories = ['Salary', 'Freelance', 'Investment', 'Gift', 'Refund', 'Other'];
+
+        // --- DOM Elements ---
+        // Login Elements
+        const loginScreen = document.getElementById('login-screen');
+        const loginForm = document.getElementById('login-form');
+        const loginUserEl = document.getElementById('login-username');
+        const loginPassEl = document.getElementById('login-password');
+        const loginErrorEl = document.getElementById('login-error');
+        const userGreetingEl = document.getElementById('user-greeting');
+
+        // App Elements
+        const form = document.getElementById('transaction-form');
+        const amountEl = document.getElementById('amount');
+        const categoryEl = document.getElementById('category');
+        const dateEl = document.getElementById('date');
+        // Type inputs removed
+        const listEl = document.getElementById('transaction-list');
+        const balanceEl = document.getElementById('total-balance');
+        const incomeEl = document.getElementById('total-income');
+        const expenseEl = document.getElementById('total-expenses');
+
+        // --- Initialization ---
+        const today = new Date().toISOString().split('T')[0];
+        dateEl.value = today;
+        updateCategoryOptions();
+
+        // --- Authentication Logic ---
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = loginUserEl.value.trim().toLowerCase();
+            const password = loginPassEl.value.trim();
+
+            if (USERS[username] && USERS[username] === password) {
+                loginSuccess(username);
+            } else {
+                loginErrorEl.classList.remove('hidden');
+                // Shake effect
+                loginForm.classList.add('animate-pulse');
+                setTimeout(() => loginForm.classList.remove('animate-pulse'), 500);
+            }
+        });
+
+        function loginSuccess(username) {
+            currentUser = username;
+            // Hide Login Screen
+            loginScreen.classList.add('hidden-screen');
+            
+            // Update Greeting
+            // Capitalize first letter
+            const displayName = username.charAt(0).toUpperCase() + username.slice(1);
+            userGreetingEl.innerHTML = `Welcome, ${displayName}`;
+            
+            // Load User Data
+            loadUserData();
+        }
+
+        function logout() {
+            // Reset state
+            currentUser = null;
+            transactions = [];
+            loginUserEl.value = '';
+            loginPassEl.value = '';
+            loginErrorEl.classList.add('hidden');
+            
+            // Show login screen
+            loginScreen.classList.remove('hidden-screen');
+        }
+
+        function loadUserData() {
+            const key = `lm_budget_planner_${currentUser}`;
+            const storedData = localStorage.getItem(key);
+
+            if (storedData) {
+                transactions = JSON.parse(storedData);
+            } else {
+                // Default Initialization: Add Salary of 20,00,000 for new users
+                transactions = [{
+                    id: Date.now(),
+                    type: 'income',
+                    description: 'Salary',
+                    amount: 2000000,
+                    category: 'Salary',
+                    date: today
+                }];
+                saveData();
+            }
+            updateUI();
+        }
+
+        function saveData() {
+            if (!currentUser) return;
+            const key = `lm_budget_planner_${currentUser}`;
+            localStorage.setItem(key, JSON.stringify(transactions));
+        }
+
+        function clearUserData() {
+            if(confirm('Are you sure you want to delete ALL your data? This cannot be undone.')) {
+                transactions = [];
+                saveData();
+                updateUI();
+            }
+        }
+
+        // --- App Core Functions ---
+
+        // Removed type input event listener
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            addTransaction();
+        });
+
+        function updateCategoryOptions() {
+            // Only show expense categories now
+            categoryEl.innerHTML = expenseCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+
+        function addTransaction() {
+            const type = 'expense'; // Hardcoded to expense
+            const amount = +amountEl.value;
+            const category = categoryEl.value;
+            const date = dateEl.value;
+
+            if (amount === 0) return;
+
+            const transaction = {
+                id: Date.now(),
+                type,
+                description: category, 
+                amount,
+                category,
+                date
+            };
+
+            transactions.push(transaction);
+            saveData();
+            updateUI();
+            form.reset();
+            dateEl.value = today;
+            updateCategoryOptions();
+        }
+
+        function deleteTransaction(id) {
+            if(confirm('Delete this transaction?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveData();
+                updateUI();
+            }
+        }
+
+        function formatINR(amount) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function updateUI() {
+            updateSummary();
+            renderList();
+            renderChart();
+        }
+
+        function updateSummary() {
+            const amounts = transactions.map(t => t.type === 'income' ? t.amount : -t.amount);
+            const total = amounts.reduce((acc, item) => acc + item, 0);
+            const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+
+            balanceEl.innerText = formatINR(total);
+            incomeEl.innerText = `+${formatINR(income)}`;
+            expenseEl.innerText = `-${formatINR(expense)}`;
+        }
+
+        function renderList() {
+            listEl.innerHTML = '';
+
+            // Filter: Only show expenses in the list
+            const expenseTransactions = transactions.filter(t => t.type === 'expense');
+
+            if (expenseTransactions.length === 0) {
+                listEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400 py-10">
+                         <div class="bg-slate-100 p-4 rounded-full mb-3">
+                            <i class="fa-solid fa-receipt text-2xl opacity-50"></i>
+                        </div>
+                        <p class="text-sm font-medium">No expenses recorded yet.</p>
+                    </div>`;
+                return;
+            }
+
+            const sortedTransactions = [...expenseTransactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedTransactions.forEach((t, index) => {
+                // Since we are only showing expenses, we can hardcode the styling for negative/expense items
+                const sign = '-';
+                const amountClass = 'text-rose-600';
+                const bgIcon = 'bg-rose-100 text-rose-600';
+                const icon = 'fa-bag-shopping';
+                
+                // Staggered animation delay
+                const delay = index * 50; 
+
+                const item = document.createElement('div');
+                item.className = `group bg-white p-4 rounded-2xl mb-3 flex justify-between items-center shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-100 hover:-translate-y-1 transition-all duration-200 animate-fade-in`;
+                item.style.animationDelay = `${delay}ms`;
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-2xl ${bgIcon} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                            <i class="fa-solid ${icon} text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm md:text-base">${t.description || t.category}</h4>
+                            <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                <i class="fa-regular fa-calendar"></i> ${t.date}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-5">
+                        <span class="font-bold ${amountClass} text-base md:text-lg tracking-tight">${sign}${formatINR(t.amount)}</span>
+                        <button onclick="deleteTransaction(${t.id})" class="h-8 w-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+
+                listEl.appendChild(item);
+            });
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const noDataEl = document.getElementById('no-data-chart');
+            const expenseTransactions = transactions.filter(t => t.type === 'expense');
+            
+            if (expenseTransactions.length === 0) {
+                if (chartInstance) chartInstance.destroy();
+                noDataEl.classList.remove('hidden');
+                return;
+            } else {
+                noDataEl.classList.add('hidden');
+            }
+
+            const categoryTotals = {};
+            expenseTransactions.forEach(t => {
+                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+            });
+
+            const labels = Object.keys(categoryTotals);
+            const data = Object.values(categoryTotals);
+
+            const colors = [
+                '#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ef4444', '#64748b', '#a855f7'
+            ];
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: { family: "'Outfit', sans-serif", size: 11 },
+                                color: '#64748b',
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                            padding: 12,
+                            bodyFont: { family: "'Outfit', sans-serif" },
+                            titleFont: { family: "'Outfit', sans-serif", weight: 'bold' },
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    layout: { padding: 10 }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
