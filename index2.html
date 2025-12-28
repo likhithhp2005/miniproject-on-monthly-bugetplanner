@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Likhi & Mohi | Cinematic</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #050505;
+            color: #e2e8f0;
+            overflow: hidden;
+            perspective: 1000px; /* Enable 3D space */
+        }
+
+        /* --- Cinematic Film Grain --- */
+        .film-grain {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* --- Deep Space Background --- */
+        .universe {
+            position: fixed;
+            inset: -10%;
+            width: 120%;
+            height: 120%;
+            background: radial-gradient(circle at 50% 50%, #1a1b4b 0%, #000000 100%);
+            z-index: -3;
+        }
+
+        /* --- Parallax Orbs --- */
+        .orb-container {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            pointer-events: none;
+            transform-style: preserve-3d;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.5;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        /* Intense colors */
+        .orb-1 { top: 10%; left: 20%; width: 30vw; height: 30vw; background: radial-gradient(circle, #6366f1, transparent); box-shadow: 0 0 100px #6366f1; }
+        .orb-2 { bottom: 10%; right: 10%; width: 40vw; height: 40vw; background: radial-gradient(circle, #db2777, transparent); box-shadow: 0 0 100px #db2777; }
+        .orb-3 { top: 40%; left: 40%; width: 25vw; height: 25vw; background: radial-gradient(circle, #10b981, transparent); box-shadow: 0 0 80px #10b981; }
+
+        /* --- Glassmorphism UI --- */
+        .glass-panel {
+            background: rgba(20, 20, 30, 0.4); /* Darker glass */
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s ease;
+        }
+        
+        .glass-highlight {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(125deg, rgba(255,255,255,0.1) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.05) 100%);
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        /* --- Animations --- */
+        
+        /* Entrance Sequence */
+        @keyframes cinematicIn {
+            0% { opacity: 0; transform: scale(1.1) translateY(30px); filter: blur(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+        
+        .animate-enter { 
+            opacity: 0; 
+            animation: cinematicIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; 
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+
+        /* Warp Speed Exit */
+        .warp-speed-exit {
+            animation: warpOut 1s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+        }
+        @keyframes warpOut {
+            0% { transform: translateZ(0) scale(1); opacity: 1; filter: blur(0); }
+            50% { opacity: 0.8; }
+            100% { transform: translateZ(1000px) scale(5); opacity: 0; filter: blur(20px); }
+        }
+
+        /* Hover Glow */
+        .hover-glow:hover {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Input Styles */
+        .cinematic-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .cinematic-input:focus {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: #818cf8;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #818cf8; }
+
+        /* Chart Customization */
+        #expenseChart { filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
+    </style>
+</head>
+<body class="h-screen flex flex-col relative text-slate-100">
+
+    <!-- Cinematic Overlays -->
+    <div class="film-grain"></div>
+    <div class="universe"></div>
+    <div class="orb-container" id="parallax-bg">
+        <div class="orb orb-1" data-speed="2"></div>
+        <div class="orb orb-2" data-speed="-2"></div>
+        <div class="orb orb-3" data-speed="4"></div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-all duration-700">
+        <div class="w-full max-w-md p-10 mx-4 glass-panel rounded-[2rem] relative overflow-hidden transform transition duration-500 shadow-2xl group">
+            <div class="glass-highlight"></div>
+
+            <div class="text-center mb-10 relative z-10">
+                <div class="h-24 w-auto px-8 mx-auto bg-gradient-to-tr from-indigo-600 to-fuchsia-700 rounded-2xl inline-flex items-center justify-center text-2xl font-bold shadow-[0_0_30px_rgba(99,102,241,0.5)] mb-6 ring-1 ring-white/20 animate-pulse">
+                    Likhi & Mohi
+                </div>
+                <h1 class="text-4xl font-black tracking-widest uppercase bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                    MONTHLY<br>TURNOVER
+                </h1>
+                <div class="h-0.5 w-32 bg-gradient-to-r from-transparent via-indigo-500 to-transparent mx-auto mt-4 rounded-full shadow-[0_0_10px_#6366f1]"></div>
+                <p class="text-indigo-300 text-xs mt-3 font-medium tracking-[0.3em] uppercase opacity-80">Restricted Access • System v4.0</p>
+            </div>
+
+            <form id="login-form" class="space-y-6 relative z-10">
+                <div class="group relative">
+                    <input type="text" id="login-username" required placeholder="IDENTIFIER"
+                        class="cinematic-input w-full pl-12 pr-4 py-4 rounded-xl text-white placeholder-white/20 outline-none font-bold tracking-wider text-sm">
+                    <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400/70 transition-all"></i>
+                </div>
+                
+                <div class="group relative">
+                    <input type="password" id="login-password" required placeholder="ACCESS CODE"
+                        class="cinematic-input w-full pl-12 pr-4 py-4 rounded-xl text-white placeholder-white/20 outline-none font-bold tracking-wider text-sm">
+                    <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400/70 transition-all"></i>
+                </div>
+
+                <div id="login-error" class="hidden bg-rose-900/40 border border-rose-500/50 text-rose-200 text-xs font-bold p-3 rounded-lg text-center shadow-[0_0_20px_rgba(225,29,72,0.3)] animate-bounce">
+                    <i class="fa-solid fa-triangle-exclamation mr-2"></i> UNAUTHORIZED CREDENTIALS
+                </div>
+
+                <button type="submit" class="w-full bg-white text-black font-black py-4 rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.6)] hover:scale-[1.02] transition-all duration-300 uppercase tracking-widest text-sm mt-2 flex items-center justify-center gap-2 group relative overflow-hidden">
+                    <span class="relative z-10">Initialize System</span>
+                    <div class="absolute inset-0 bg-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform relative z-10"></i>
+                </button>
+            </form>
+            
+            <div class="mt-8 text-center opacity-40 hover:opacity-100 transition-opacity">
+                <i class="fa-solid fa-fingerprint text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <!-- Navbar -->
+    <nav id="app-navbar" class="fixed top-0 w-full z-40 bg-black/40 backdrop-blur-xl border-b border-white/5 opacity-0 transition-opacity duration-1000">
+        <div class="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="h-9 px-4 rounded-lg bg-indigo-600/20 border border-indigo-500/50 text-indigo-100 font-bold flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.3)] text-xs uppercase tracking-wider">
+                    Likhi & Mohi
+                </div>
+                <div>
+                    <h1 id="user-greeting" class="text-sm font-bold tracking-wider uppercase text-white">Dashboard</h1>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="shareApp()" class="text-xs bg-white/5 hover:bg-white/10 text-white py-2 px-4 rounded-lg transition border border-white/10 flex items-center gap-2 uppercase tracking-wide font-bold">
+                    <i class="fa-solid fa-share-nodes text-indigo-400"></i> <span class="hidden sm:inline">Share</span>
+                </button>
+                <button onclick="logout()" class="h-9 w-9 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/30 text-rose-400 rounded-lg transition border border-rose-500/20">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div id="app-content" class="flex-1 overflow-hidden relative opacity-0 pt-20 transition-opacity duration-1000">
+        <div class="h-full overflow-y-auto p-4 md:p-8 pb-24">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                <!-- Left Column (4 cols) -->
+                <div class="lg:col-span-4 space-y-6">
+                    
+                    <!-- Balance Card -->
+                    <div class="animate-enter glass-panel rounded-3xl p-8 relative group overflow-hidden hover-glow">
+                        <div class="glass-highlight"></div>
+                        
+                        <div class="relative z-10">
+                            <h2 class="text-indigo-300 text-[10px] font-bold uppercase tracking-[0.3em] mb-2">Net Liquidity</h2>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xl text-white/40">₹</span>
+                                <div id="total-balance" class="text-5xl md:text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">0</div>
+                            </div>
+                            
+                            <!-- Animated Line -->
+                            <div class="h-px w-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent my-6 opacity-50"></div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-black/40 rounded-xl p-3 border border-white/5">
+                                    <div class="flex items-center gap-2 mb-1 text-emerald-400 text-[9px] font-black uppercase tracking-widest">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_#10b981]"></div> Inflow
+                                    </div>
+                                    <div id="total-income" class="text-base font-bold text-emerald-100/90">₹0</div>
+                                </div>
+                                <div class="bg-black/40 rounded-xl p-3 border border-white/5">
+                                    <div class="flex items-center gap-2 mb-1 text-rose-400 text-[9px] font-black uppercase tracking-widest">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_5px_#f43f5e]"></div> Outflow
+                                    </div>
+                                    <div id="total-expenses" class="text-base font-bold text-rose-100/90">₹0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Expense Form -->
+                    <div class="glass-panel rounded-3xl p-6 animate-enter delay-100 hover-glow relative overflow-hidden">
+                         <div class="glass-highlight"></div>
+                        <h3 class="text-sm font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-wider relative z-10">
+                            <div class="w-6 h-6 rounded bg-indigo-500 flex items-center justify-center shadow-[0_0_10px_#6366f1]">
+                                <i class="fa-solid fa-plus text-white text-[10px]"></i>
+                            </div>
+                            Record Transaction
+                        </h3>
+                        
+                        <form id="transaction-form" class="space-y-5 relative z-10">
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-[9px] font-bold text-indigo-300 ml-1 mb-1 block uppercase tracking-wider">Value (INR)</label>
+                                        <input type="number" id="amount" placeholder="0" min="1" required
+                                            class="cinematic-input w-full px-4 py-3 rounded-xl text-sm font-bold text-white placeholder-white/20">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] font-bold text-indigo-300 ml-1 mb-1 block uppercase tracking-wider">Classification</label>
+                                        <div class="relative">
+                                            <select id="category" class="cinematic-input w-full px-4 py-3 rounded-xl text-sm font-bold text-white appearance-none cursor-pointer">
+                                                <!-- Options via JS -->
+                                            </select>
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-white/50">
+                                                <i class="fa-solid fa-caret-down text-xs"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-[9px] font-bold text-indigo-300 ml-1 mb-1 block uppercase tracking-wider">Timestamp</label>
+                                    <input type="date" id="date" required
+                                        class="cinematic-input w-full px-4 py-3 rounded-xl text-sm font-bold text-white/80 uppercase">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2 group border border-indigo-400/30">
+                                <i class="fa-solid fa-bolt text-yellow-300 group-hover:animate-pulse"></i> Execute
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="text-center animate-enter delay-200">
+                         <button onclick="clearUserData()" class="text-[9px] font-bold text-white/20 hover:text-rose-400 transition uppercase tracking-[0.2em] hover:scale-105 transform duration-300">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> System Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column (8 cols) -->
+                <div class="lg:col-span-8 flex flex-col gap-6">
+                    
+                    <!-- Chart Section -->
+                    <div class="glass-panel rounded-3xl p-6 animate-enter delay-200 relative overflow-hidden">
+                        <div class="glass-highlight"></div>
+                        <div class="flex justify-between items-center mb-6 relative z-10">
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Analytics</h3>
+                            <div class="flex items-center gap-2">
+                                <div class="h-2 w-2 rounded-full bg-indigo-500 animate-ping"></div>
+                                <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-wide">Live Data</span>
+                            </div>
+                        </div>
+                        <div class="h-64 w-full flex justify-center relative z-10">
+                             <canvas id="expenseChart"></canvas>
+                             <div id="no-data-chart" class="absolute inset-0 flex flex-col items-center justify-center text-white/20 hidden">
+                                <i class="fa-solid fa-chart-simple text-4xl mb-2"></i>
+                                <span class="text-xs font-bold uppercase tracking-widest">Awaiting Data Points</span>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction List -->
+                    <div class="glass-panel rounded-3xl flex flex-col flex-1 min-h-[400px] overflow-hidden animate-enter delay-300 relative">
+                        <div class="glass-highlight"></div>
+                        <div class="p-6 border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-20 flex justify-between items-center">
+                             <h3 class="text-sm font-bold text-white uppercase tracking-wider">Ledger</h3>
+                             <i class="fa-solid fa-list-ul text-white/30"></i>
+                        </div>
+                        
+                        <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar relative z-10" id="transaction-list">
+                            <!-- Transactions injected here -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script>
+        // --- 3D Parallax Logic ---
+        document.addEventListener('mousemove', (e) => {
+            const orbs = document.querySelectorAll('.orb');
+            const x = (window.innerWidth - e.pageX) / 100;
+            const y = (window.innerHeight - e.pageY) / 100;
+
+            orbs.forEach(orb => {
+                const speed = orb.getAttribute('data-speed');
+                orb.style.transform = `translateX(${x * speed}px) translateY(${y * speed}px)`;
+            });
+        });
+
+        // --- State Management ---
+        let currentUser = null;
+        let transactions = [];
+        let chartInstance = null;
+        const initialSalary = 50000;
+
+        // --- Constants ---
+        const expenseCategories = ['Food', 'Rent', 'Transport', 'Utilities', 'Entertainment', 'Health', 'Shopping', 'Education', 'Other'];
+
+        // --- DOM Elements ---
+        const loginScreen = document.getElementById('login-screen');
+        const loginForm = document.getElementById('login-form');
+        const loginUserEl = document.getElementById('login-username');
+        const loginPassEl = document.getElementById('login-password');
+        const loginErrorEl = document.getElementById('login-error');
+        const userGreetingEl = document.getElementById('user-greeting');
+        const appNavbar = document.getElementById('app-navbar');
+        const appContent = document.getElementById('app-content');
+
+        const form = document.getElementById('transaction-form');
+        const amountEl = document.getElementById('amount');
+        const categoryEl = document.getElementById('category');
+        const dateEl = document.getElementById('date');
+        const listEl = document.getElementById('transaction-list');
+        const balanceEl = document.getElementById('total-balance');
+        const incomeEl = document.getElementById('total-income');
+        const expenseEl = document.getElementById('total-expenses');
+
+        // --- Initialization ---
+        const today = new Date().toISOString().split('T')[0];
+        dateEl.value = today;
+        updateCategoryOptions();
+
+        // --- Authentication Logic ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = loginUserEl.value.trim().toLowerCase();
+            const password = loginPassEl.value.trim();
+
+            if (username.length > 0 && password === 'hacker') {
+                // WARP SPEED EFFECT
+                document.body.style.overflow = 'hidden'; // Ensure no scroll during animation
+                loginScreen.classList.add('warp-speed-exit');
+                
+                setTimeout(() => {
+                    loginScreen.style.display = 'none';
+                    appNavbar.classList.remove('opacity-0');
+                    appContent.classList.remove('opacity-0');
+                    // Add slight scale in for content
+                    appContent.style.transform = "scale(1)";
+                    loginSuccess(username);
+                }, 800); 
+            } else {
+                loginErrorEl.classList.remove('hidden');
+                loginForm.classList.add('animate-bounce');
+                setTimeout(() => loginForm.classList.remove('animate-bounce'), 500);
+            }
+        });
+
+        function loginSuccess(username) {
+            currentUser = username;
+            const displayName = username.charAt(0).toUpperCase() + username.slice(1);
+            userGreetingEl.innerHTML = `WELCOME, <span class="text-indigo-400">${displayName}</span>`;
+            loadUserData();
+        }
+
+        function logout() {
+            location.reload(); 
+        }
+
+        // --- Helper: Digital Counter Animation ---
+        function animateValue(obj, start, end, duration, isCurrency = true) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // Ease Out Quart
+                const easeProgress = 1 - Math.pow(1 - progress, 4);
+                
+                const currentVal = Math.floor(easeProgress * (end - start) + start);
+                
+                if (isCurrency) {
+                    obj.innerHTML = new Intl.NumberFormat('en-IN').format(currentVal);
+                } else {
+                    obj.innerHTML = currentVal;
+                }
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                     if (isCurrency) obj.innerHTML = new Intl.NumberFormat('en-IN').format(end);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function shareApp() {
+            const shareData = { title: 'Likhi & Mohi Turnover', text: 'Secure Turnover Tracker', url: window.location.href };
+            if (navigator.share) { navigator.share(shareData).catch(console.error); } 
+            else { 
+                navigator.clipboard.writeText(window.location.href).then(() => alert("UPLINK COPIED")).catch(() => alert("COPY FAILED")); 
+            }
+        }
+
+        function loadUserData() {
+            const key = `lm_budget_planner_${currentUser}`;
+            const storedData = localStorage.getItem(key);
+
+            if (storedData) {
+                transactions = JSON.parse(storedData);
+            } else {
+                transactions = [{
+                    id: Date.now(),
+                    type: 'income',
+                    description: 'Salary',
+                    amount: initialSalary,
+                    category: 'Salary',
+                    date: today
+                }];
+                saveData();
+            }
+            updateUI();
+        }
+
+        function saveData() {
+            if (!currentUser) return;
+            const key = `lm_budget_planner_${currentUser}`;
+            localStorage.setItem(key, JSON.stringify(transactions));
+        }
+
+        function clearUserData() {
+            if(confirm('INITIATE SYSTEM RESET?')) {
+                transactions = [{
+                    id: Date.now(),
+                    type: 'income',
+                    description: 'Salary',
+                    amount: initialSalary,
+                    category: 'Salary',
+                    date: today
+                }];
+                saveData();
+                updateUI();
+            }
+        }
+
+        // --- App Core Functions ---
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            addTransaction();
+        });
+
+        function updateCategoryOptions() {
+            categoryEl.innerHTML = expenseCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+
+        function addTransaction() {
+            const amount = +amountEl.value;
+            const category = categoryEl.value;
+            const date = dateEl.value;
+            if (amount === 0) return;
+
+            const transaction = {
+                id: Date.now(),
+                type: 'expense',
+                description: category, 
+                amount,
+                category,
+                date
+            };
+
+            transactions.push(transaction);
+            saveData();
+            updateUI();
+            form.reset();
+            dateEl.value = today;
+            updateCategoryOptions();
+        }
+
+        function deleteTransaction(id) {
+            if(confirm('PURGE RECORD?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveData();
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            updateSummary();
+            renderList();
+            renderChart();
+        }
+
+        function updateSummary() {
+            const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const total = income - expense;
+
+            const currentBalance = parseInt(balanceEl.innerText.replace(/,/g, '')) || 0;
+            animateValue(balanceEl, currentBalance, total, 1500);
+            
+            incomeEl.innerText = `₹${new Intl.NumberFormat('en-IN').format(income)}`;
+            expenseEl.innerText = `₹${new Intl.NumberFormat('en-IN').format(expense)}`;
+        }
+
+        function renderList() {
+            listEl.innerHTML = '';
+            const expenseTransactions = transactions.filter(t => t.type === 'expense');
+
+            if (expenseTransactions.length === 0) {
+                listEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-white/20 py-10 animate-pulse">
+                        <i class="fa-solid fa-satellite-dish text-2xl opacity-50 mb-3"></i>
+                        <p class="text-[10px] font-bold uppercase tracking-widest">No Data Transmission</p>
+                    </div>`;
+                return;
+            }
+
+            const sortedTransactions = [...expenseTransactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedTransactions.forEach((t, index) => {
+                const delay = index * 80; 
+                const item = document.createElement('div');
+                item.className = `group bg-black/30 p-4 rounded-2xl mb-3 flex justify-between items-center border border-white/5 hover:border-indigo-500/50 hover:bg-black/50 hover:translate-x-1 transition-all duration-300 animate-enter relative overflow-hidden`;
+                item.style.animationDelay = `${delay}ms`;
+
+                item.innerHTML = `
+                    <div class="absolute inset-0 bg-gradient-to-r from-indigo-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500/10 to-purple-500/10 flex items-center justify-center border border-white/10 group-hover:border-rose-500/50 transition-colors">
+                            <i class="fa-solid fa-cube text-rose-300/70 text-xs"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-200 text-sm">${t.description || t.category}</h4>
+                            <div class="text-[9px] text-indigo-300/50 flex items-center gap-2 mt-0.5 uppercase tracking-wider font-bold">
+                                <span>${t.date}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span class="font-bold text-rose-400 text-sm tracking-wider drop-shadow-sm">- ₹${new Intl.NumberFormat('en-IN').format(t.amount)}</span>
+                        <button onclick="deleteTransaction(${t.id})" class="h-8 w-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white hover:bg-rose-500/80 transition-all">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const noDataEl = document.getElementById('no-data-chart');
+            const expenseTransactions = transactions.filter(t => t.type === 'expense');
+            
+            if (expenseTransactions.length === 0) {
+                if (chartInstance) chartInstance.destroy();
+                noDataEl.classList.remove('hidden');
+                return;
+            } else {
+                noDataEl.classList.add('hidden');
+            }
+
+            const categoryTotals = {};
+            expenseTransactions.forEach(t => {
+                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+            });
+
+            const labels = Object.keys(categoryTotals);
+            const data = Object.values(categoryTotals);
+
+            // Cyberpunk Palette
+            const colors = [
+                '#6366f1', '#ec4899', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#f43f5e', '#64748b'
+            ];
+
+            if (chartInstance) chartInstance.destroy();
+
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '80%',
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 2000,
+                        easing: 'easeInOutExpo'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 8,
+                                usePointStyle: true,
+                                pointStyle: 'rectRot',
+                                font: { size: 10, weight: 'bold' },
+                                color: '#94a3b8',
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(5, 5, 10, 0.9)',
+                                       titleColor: '#fff',
+                padding: 15,
+                            cornerRadius: 8,
+                            borderWidth: 1,
+                            borderColor: 'rgba(99, 102, 241, 0.3)',
+                             bodyColor: '#cbd5e1',
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ₹' + context.raw.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    layout: { padding: 10 }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
